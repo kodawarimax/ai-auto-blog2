@@ -1,0 +1,16 @@
+# 完全自動AI投稿システム - 依存関係（修正版）
+
+# 重複を解決し、適切なバージョンを指定
+beautifulsoup4==4.12.3
+requests==2.31.0
+selenium==4.15.2
+supabase==2.3.4
+google-generativeai==0.3.2
+python-dotenv==1.0.0
+
+# 追加の依存関係
+lxml==4.9.3
+certifi==2023.7.22
+charset-normalizer==3.2.0
+idna==3.4
+urllib3==2.0.4
