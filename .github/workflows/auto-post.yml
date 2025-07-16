@@ -96,6 +96,19 @@ jobs:
         BLOG_URL: ${{ secrets.BLOG_URL }}
         BLOG_USERNAME: ${{ secrets.BLOG_USERNAME }}
         BLOG_PASSWORD: ${{ secrets.BLOG_PASSWORD }}
+ 
+        # メール通知設定
+        SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+        SMTP_PORT: ${{ secrets.SMTP_PORT }}
+        SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+        SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+        RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
+    
+        # Slack通知設定
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  
+        # LINE通知設定
+        LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
       run: |
         python main.py dashboard
         
