@@ -1,1 +1,111 @@
+name: AI自動投稿システム
+
+on:
+  schedule:
+    # 毎日午前7時30分（JST）に実行 = UTC 22:30（前日）
+    - cron: '30 22 * * *'
+    # 毎日午後7時30分（JST）に実行 = UTC 10:30
+    - cron: '30 10 * * *'
+  workflow_dispatch:
+    inputs:
+      execution_time:
+        type: choice
+        required: true
+        description: '実行時間を選択'
+        default: 'morning'
+        options:
+          - 'morning'
+          - 'evening'
+          - 'both'
+      custom_time:
+        type: string
+        required: false
+        description: 'カスタム時間 (HH:MM JST形式)'
+        default: '09:00'
+      enable_system_check:
+        type: boolean
+        required: false
+        description: 'システム状態確認を実行する'
+        default: true
+
+jobs:
+  auto-post:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: リポジトリをチェックアウト
+      uses: actions/checkout@v4
+    
+    - name: Python環境をセットアップ
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: requirements.txtファイルの存在確認
+      run: |
+        if [ ! -f requirements.txt ]; then
+          echo "requirements.txt が見つかりません"
+          exit 1
+        fi
+        echo "requirements.txt の内容："
+        cat requirements.txt
+    
+    - name: 依存関係をインストール
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r requirements.txt
+    
+    - name: インストール済みパッケージ確認
+      run: |
+        echo "=== インストール済みパッケージ一覧 ==="
+        python -m pip list | grep -E "(beautifulsoup4|requests|selenium|supabase|google-generativeai|python-dotenv)"
+        echo "=== Python環境の確認 ==="
+        python -c "import sys; print(f'Python version: {sys.version}')"
+        python -c "import sys; print(f'Python executable: {sys.executable}')"
+    
+    - name: モジュールインポートテスト
+      run: |
+        echo "=== モジュールインポートテスト ==="
+        python -c "from bs4 import BeautifulSoup; print('✅ bs4 import success')"
+        python -c "import requests; print('✅ requests import success')"
+        python -c "from supabase import create_client; print('✅ supabase import success')"
+        python -c "import google.generativeai as genai; print('✅ google-generativeai import success')"
+        python -c "from dotenv import load_dotenv; print('✅ python-dotenv import success')"
+        
+    - name: 完全自動投稿を実行
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        BLOG_URL: ${{ secrets.BLOG_URL }}
+        BLOG_USERNAME: ${{ secrets.BLOG_USERNAME }}
+        BLOG_PASSWORD: ${{ secrets.BLOG_PASSWORD }}
+        MAX_CONTENT_LENGTH: 500
+        EXECUTION_TIME: ${{ github.event.inputs.execution_time || 'scheduled' }}
+        CUSTOM_TIME: ${{ github.event.inputs.custom_time || '' }}
+      run: |
+        python main.py auto
+    
+    - name: システム状態を確認
+      if: ${{ github.event.inputs.enable_system_check != 'false' }}
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        BLOG_URL: ${{ secrets.BLOG_URL }}
+        BLOG_USERNAME: ${{ secrets.BLOG_USERNAME }}
+        BLOG_PASSWORD: ${{ secrets.BLOG_PASSWORD }}
+      run: |
+        python main.py dashboard
+        
+    - name: エラー時の詳細情報出力
+      if: failure()
+      run: |
+        echo "=== エラー発生時の詳細情報 ==="
+        python -c "import sys; print(f'Python version: {sys.version}')"
+        python -c "import sys; print(f'Python path: {sys.path}')"
+        python -m pip list
+        echo "=== 環境変数確認 ==="
+        env | grep -E "(GEMINI_API_KEY|SUPABASE_URL|SUPABASE_KEY|BLOG_URL|BLOG_USERNAME|BLOG_PASSWORD)" | sed 's/=.*/=***/'
 
